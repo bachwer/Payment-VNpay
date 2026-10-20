@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cổng Thanh Toán VNPay - Sandbox Demo & Testing</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- QRCode.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            vnpay: {
+              blue: '#005baa',
+              red: '#e31837',
+              dark: '#0a3871',
+              light: '#f0f7ff'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+    .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 antialiased py-8 px-4 sm:px-6 lg:px-8">
+
+  <!-- Header -->
+  <header class="max-w-6xl mx-auto mb-8">
+    <div class="flex flex-col md:flex-row items-center justify-between bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-14 h-14 rounded-xl bg-gradient-to-tr from-vnpay-blue to-blue-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+          <i class="fa-solid fa-credit-card text-2xl"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">VNPay Sandbox Test Gateway</h1>
+            <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">v2.1.0 Ready</span>
+          </div>
+          <p class="text-sm text-slate-500">Giao diện kiểm thử giao dịch thanh toán mua hàng VNPay kết nối Backend Spring Boot Docker</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="http://localhost:8085" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
+          <i class="fa-solid fa-database text-amber-600"></i>
+          <span>phpMyAdmin (8085)</span>
+        </a>
+        <div id="backendPingBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 text-xs font-medium">
+          <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+          <span>Đang kiểm tra kết nối...</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+    <!-- Cột trái: Cấu hình Backend & Thông tin Giỏ hàng (7 cột) -->
+    <div class="lg:col-span-7 space-y-6">
+
+      <!-- Box 1: Cấu hình Backend Host & Tunnel -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-server text-vnpay-blue"></i>
+            1. Cấu hình Backend Host / Tunnel
+          </h2>
+          <span class="text-xs text-slate-500 font-mono">Port 8080 default</span>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Backend Base URL (Local hoặc Tunnel URL)</label>
+            <div class="flex gap-2">
+              <input type="text" id="backendUrlInput" value="http://localhost:8080" placeholder="http://localhost:8080 hoặc https://your-tunnel.ngrok-free.app"
+                class="flex-1 px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-vnpay-blue/20 focus:border-vnpay-blue outline-none font-mono">
+              <button onclick="pingBackend()" class="px-4 py-2.5 text-sm font-medium bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate"></i>
+                <span>Kiểm tra</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick switchers -->
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <span class="text-slate-400">Chọn nhanh:</span>
+            <button onclick="setBackendUrl('http://localhost:8080')" class="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 hover:text-vnpay-blue rounded-lg font-mono transition">http://localhost:8080</button>
+            <button onclick="setBackendUrl('http://127.0.0.1:8080')" class="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 hover:text-vnpay-blue rounded-lg font-mono transition">http://127.0.0.1:8080</button>
+          </div>
+
+          <!-- Hint tunnel -->
+          <div class="p-3 bg-blue-50/70 border border-blue-100 rounded-xl text-xs text-blue-900 flex items-start gap-2.5">
+            <i class="fa-solid fa-circle-info text-vnpay-blue mt-0.5"></i>
+            <div class="space-y-1">
+              <p class="font-medium">Muốn nhận Webhook IPN / ReturnURL thực tế từ internet?</p>
+              <p class="text-blue-700">Mở terminal chạy lệnh tunnel tới cổng 8080: <code class="bg-blue-100 px-1 py-0.5 rounded font-mono font-semibold">ngrok http 8080</code> hoặc <code class="bg-blue-100 px-1 py-0.5 rounded font-mono font-semibold">cloudflared tunnel --url http://localhost:8080</code> rồi dán URL vào ô trên.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Box 2: Thông tin Giỏ hàng & Mua hàng -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80">
+        <h2 class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-basket-shopping text-emerald-600"></i>
+          2. Chọn mặt hàng thử nghiệm (Giả lập đơn hàng)
+        </h2>
+
+        <!-- Sample products -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5">
+          <button onclick="selectProduct('Khóa học Spring Boot Microservices', 500000)" class="product-btn p-3 rounded-xl border border-slate-200 hover:border-vnpay-blue hover:bg-blue-50/30 text-left transition flex flex-col justify-between">
+            <span class="text-xs font-semibold text-slate-700">Khóa học Microservices</span>
+            <span class="text-xs font-bold text-vnpay-blue mt-2">500.000 ₫</span>
+          </button>
+          <button onclick="selectProduct('iPhone 16 Pro Max 256GB', 34990000)" class="product-btn p-3 rounded-xl border border-slate-200 hover:border-vnpay-blue hover:bg-blue-50/30 text-left transition flex flex-col justify-between">
+            <span class="text-xs font-semibold text-slate-700">iPhone 16 Pro Max</span>
+            <span class="text-xs font-bold text-vnpay-blue mt-2">34.990.000 ₫</span>
+          </button>
+          <button onclick="selectProduct('Tai nghe AirPods Pro 2', 5500000)" class="product-btn p-3 rounded-xl border border-slate-200 hover:border-vnpay-blue hover:bg-blue-50/30 text-left transition flex flex-col justify-between">
+            <span class="text-xs font-semibold text-slate-700">AirPods Pro 2</span>
+            <span class="text-xs font-bold text-vnpay-blue mt-2">5.500.000 ₫</span>
+          </button>
+          <button onclick="selectProduct('Ly Cà Phê Test Thanh Toán', 10000)" class="product-btn p-3 rounded-xl border border-slate-200 hover:border-vnpay-blue hover:bg-blue-50/30 text-left transition flex flex-col justify-between">
+            <span class="text-xs font-semibold text-slate-700">Cà phê Test</span>
+            <span class="text-xs font-bold text-vnpay-blue mt-2">10.000 ₫</span>
+          </button>
+        </div>
+
+        <!-- Form fields -->
+        <div class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Mã đơn hàng (Order Code / vnp_TxnRef)</label>
+              <div class="flex gap-1.5">
+                <input type="text" id="orderCodeInput" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl font-mono focus:ring-2 focus:ring-vnpay-blue/20 focus:border-vnpay-blue outline-none">
+                <button onclick="generateRandomOrderCode()" title="Tạo mã mới" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition">
+                  <i class="fa-solid fa-shuffle"></i>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Số tiền thanh toán (VND)</label>
+              <input type="number" id="amountInput" value="500000" min="1000" step="1000" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:ring-2 focus:ring-vnpay-blue/20 focus:border-vnpay-blue outline-none">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Nội dung thanh toán</label>
+            <input type="text" id="orderInfoInput" value="Thanh toán đơn hàng VNPay Test" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-vnpay-blue/20 focus:border-vnpay-blue outline-none">
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Tên khách hàng</label>
+              <input type="text" id="customerName" value="Nguyễn Văn A" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Số điện thoại</label>
+              <input type="text" id="customerPhone" value="0987654321" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none">
+            </div>
+          </div>
+
+          <!-- Checkout Button -->
+          <div class="pt-2">
+            <button id="btnCreatePayment" onclick="createVnPayPayment()"
+              class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-vnpay-blue to-blue-600 hover:from-blue-700 hover:to-blue-800 text-white font-bold text-base shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 transform active:scale-[0.99]">
+              <i class="fa-solid fa-lock"></i>
+              <span>Tạo URL & Tiến Hành Thanh Toán VNPay</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Cột phải: Kết quả thanh toán, QR Code & Thẻ Test Sandbox (5 cột) -->
+    <div class="lg:col-span-5 space-y-6">
+
+      <!-- Box 3: Kết quả URL Thanh Toán & QR Code -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80">
+        <h2 class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-qrcode text-vnpay-blue"></i>
+          3. Kết quả Payment URL & QR Code
+        </h2>
+
+        <div id="paymentResultPlaceholder" class="py-10 text-center text-slate-400 space-y-2">
+          <i class="fa-solid fa-receipt text-4xl text-slate-200"></i>
+          <p class="text-xs">Chưa có giao dịch nào được tạo.<br>Nhấn nút thanh toán ở bên trái để sinh liên kết VNPay.</p>
+        </div>
+
+        <div id="paymentResultContainer" class="hidden space-y-4">
+          <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-semibold flex items-center gap-2">
+            <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
+            <span>Đã tạo URL thanh toán VNPay thành công!</span>
+          </div>
+
+          <!-- QR Code Center -->
+          <div class="flex flex-col items-center justify-center p-4 bg-slate-50 border border-slate-200/80 rounded-xl">
+            <div id="qrcode" class="p-2 bg-white rounded-lg shadow-sm border border-slate-200"></div>
+            <p class="text-xs text-slate-500 mt-2.5">Quét QR hoặc nhấn nút bên dưới để chuyển tiếp</p>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="space-y-2">
+            <a id="btnOpenPaymentUrl" href="#" target="_blank"
+              class="w-full py-3 px-4 rounded-xl bg-vnpay-red hover:bg-red-700 text-white font-bold text-sm shadow-md shadow-red-500/20 transition flex items-center justify-center gap-2 text-center">
+              <span>Mở Cổng Thanh Toán VNPay (Tab mới)</span>
+              <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+            </a>
+
+            <button onclick="copyPaymentUrl()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-copy"></i>
+              <span id="copyBtnText">Sao chép Payment URL</span>
+            </button>
+          </div>
+
+          <!-- Raw URL textarea -->
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Generated VNPay URL</label>
+            <textarea id="rawPaymentUrl" rows="3" readonly class="w-full p-2.5 text-xs font-mono bg-slate-50 border border-slate-200 rounded-xl text-slate-600 outline-none select-all"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Box 4: Thông tin Thẻ Test VNPay Sandbox -->
+      <div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-lg shadow-slate-900/10">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-shield-halved text-amber-400"></i>
+            <h3 class="text-sm font-bold tracking-wide uppercase text-amber-400">Tài Khoản Thẻ Test Sandbox</h3>
+          </div>
+          <span class="text-[11px] bg-slate-700/80 text-slate-300 px-2 py-0.5 rounded font-mono">VNPay Test</span>
+        </div>
+
+        <p class="text-xs text-slate-300 mb-4">Sử dụng thông tin dưới đây khi được chuyển sang màn hình Cổng VNPay:</p>
+
+        <div class="space-y-2 text-xs">
+          <div class="flex items-center justify-between bg-white/10 hover:bg-white/15 p-2.5 rounded-xl transition">
+            <span class="text-slate-400">Ngân hàng:</span>
+            <span class="font-bold text-white font-mono flex items-center gap-2">
+              NCB
+              <button onclick="copyText('NCB')" title="Copy" class="text-slate-400 hover:text-white"><i class="fa-regular fa-copy"></i></button>
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between bg-white/10 hover:bg-white/15 p-2.5 rounded-xl transition">
+            <span class="text-slate-400">Số thẻ:</span>
+            <span class="font-bold text-amber-300 font-mono flex items-center gap-2">
+              9704198526191432198
+              <button onclick="copyText('9704198526191432198')" title="Copy" class="text-slate-400 hover:text-white"><i class="fa-regular fa-copy"></i></button>
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between bg-white/10 hover:bg-white/15 p-2.5 rounded-xl transition">
+            <span class="text-slate-400">Tên chủ thẻ:</span>
+            <span class="font-bold text-white font-mono flex items-center gap-2">
+              NGUYEN VAN A
+              <button onclick="copyText('NGUYEN VAN A')" title="Copy" class="text-slate-400 hover:text-white"><i class="fa-regular fa-copy"></i></button>
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between bg-white/10 hover:bg-white/15 p-2.5 rounded-xl transition">
+            <span class="text-slate-400">Ngày phát hành:</span>
+            <span class="font-bold text-white font-mono flex items-center gap-2">
+              07/15
+              <button onclick="copyText('07/15')" title="Copy" class="text-slate-400 hover:text-white"><i class="fa-regular fa-copy"></i></button>
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between bg-white/10 hover:bg-white/15 p-2.5 rounded-xl transition">
+            <span class="text-slate-400">Mã OTP:</span>
+            <span class="font-bold text-emerald-400 font-mono flex items-center gap-2">
+              123456
+              <button onclick="copyText('123456')" title="Copy" class="text-slate-400 hover:text-white"><i class="fa-regular fa-copy"></i></button>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Box 5: Giả lập IPN Webhook Trực Tiếp -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80">
+        <h3 class="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
+          <i class="fa-solid fa-satellite-dish text-purple-600"></i>
+          Giả lập Test IPN Webhook (Server-to-Server)
+        </h3>
+        <p class="text-xs text-slate-500 mb-3">Gọi trực tiếp API IPN để mô phỏng VNPay xác nhận đơn hàng vào MySQL mà không cần mở gateway:</p>
+        
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="simulateIPN('00')" class="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-xl border border-emerald-200 transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-check"></i>
+            <span>Giả lập Thành công (00)</span>
+          </button>
+          <button onclick="simulateIPN('24')" class="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold rounded-xl border border-rose-200 transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-xmark"></i>
+            <span>Giả lập Hủy/Lỗi (24)</span>
+          </button>
+        </div>
+        <div id="ipnResult" class="mt-2 text-xs font-mono text-slate-600 hidden p-2 bg-slate-50 border rounded-lg"></div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Script Logic -->
+  <script>
+    let currentPaymentUrl = '';
+    let qrInstance = null;
+
+    // Khởi tạo mã đơn hàng ngẫu nhiên lúc load trang
+    window.addEventListener('DOMContentLoaded', () => {
+      generateRandomOrderCode();
+      pingBackend();
+    });
+
+    function getBackendUrl() {
+      let url = document.getElementById('backendUrlInput').value.trim();
+      return url.replace(/\/+$/, ''); // Bỏ slash ở cuối nếu có
+    }
+
+    function setBackendUrl(url) {
+      document.getElementById('backendUrlInput').value = url;
+      pingBackend();
+    }
+
+    // Ping kiểm tra backend
+    async function pingBackend() {
+      const badge = document.getElementById('backendPingBadge');
+      const backendUrl = getBackendUrl();
+      badge.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 text-xs font-medium";
+      badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span><span>Đang kiểm tra: ${backendUrl}</span>`;
+
+      try {
+        const testCode = 'PING_' + Date.now();
+        const res = await fetch(`${backendUrl}/api/payment/create?orderCode=${testCode}&amount=10000`, {
+          method: 'GET',
+          headers: { 'Accept': '*/*' }
+        });
+
+        if (res.ok) {
+          badge.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold";
+          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Backend Online (8080)</span>`;
+        } else {
+          throw new Error('HTTP Status: ' + res.status);
+        }
+      } catch (err) {
+        badge.className = "flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-xs font-semibold";
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500"></span><span>Không kết nối được (${err.message})</span>`;
+      }
+    }
+
+    // Random mã đơn hàng
+    function generateRandomOrderCode() {
+      const now = new Date();
+      const code = 'ORD_' + now.getFullYear() +
+        String(now.getMonth() + 1).padStart(2, '0') +
+        String(now.getDate()).padStart(2, '0') + '_' +
+        String(now.getHours()).padStart(2, '0') +
+        String(now.getMinutes()).padStart(2, '0') +
+        String(now.getSeconds()).padStart(2, '0') + '_' +
+        Math.floor(100 + Math.random() * 900);
+      document.getElementById('orderCodeInput').value = code;
+      document.getElementById('orderInfoInput').value = `Thanh toan don hang ${code}`;
+    }
+
+    // Chọn sản phẩm mẫu
+    function selectProduct(name, price) {
+      document.getElementById('amountInput').value = price;
+      document.getElementById('orderInfoInput').value = `Thanh toán: ${name}`;
+    }
+
+    // Tạo URL thanh toán VNPay
+    async function createVnPayPayment() {
+      const btn = document.getElementById('btnCreatePayment');
+      const backendUrl = getBackendUrl();
+      const orderCode = document.getElementById('orderCodeInput').value.trim();
+      const amount = document.getElementById('amountInput').value.trim();
+
+      if (!orderCode) {
+        alert('Vui lòng nhập hoặc sinh mã đơn hàng!');
+        return;
+      }
+      if (!amount || Number(amount) < 1000) {
+        alert('Số tiền tối thiểu là 1.000 VND!');
+        return;
+      }
+
+      const originalBtnHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i><span>Đang tạo liên kết VNPay...</span>`;
+
+      try {
+        const apiUrl = `${backendUrl}/api/payment/create?orderCode=${encodeURIComponent(orderCode)}&amount=${encodeURIComponent(amount)}`;
+        const res = await fetch(apiUrl, { method: 'GET' });
+
+        if (!res.ok) {
+          throw new Error(`Lỗi server: HTTP ${res.status} ${res.statusText}`);
+        }
+
+        const paymentUrl = await res.text();
+        currentPaymentUrl = paymentUrl.trim();
+
+        // Hiển thị kết quả
+        document.getElementById('paymentResultPlaceholder').classList.add('hidden');
+        document.getElementById('paymentResultContainer').classList.remove('hidden');
+
+        document.getElementById('btnOpenPaymentUrl').href = currentPaymentUrl;
+        document.getElementById('rawPaymentUrl').value = currentPaymentUrl;
+
+        // Render QR Code
+        const qrContainer = document.getElementById('qrcode');
+        qrContainer.innerHTML = '';
+        qrInstance = new QRCode(qrContainer, {
+          text: currentPaymentUrl,
+          width: 170,
+          height: 170,
+          colorDark: "#0a3871",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+
+      } catch (err) {
+        alert(`Không thể gọi API Backend tại ${backendUrl}:\n${err.message}\n\nHãy đảm bảo docker-compose đã up và backend host 8080 đang chạy!`);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalBtnHtml;
+      }
+    }
+
+    function copyPaymentUrl() {
+      if (!currentPaymentUrl) return;
+      navigator.clipboard.writeText(currentPaymentUrl).then(() => {
+        const text = document.getElementById('copyBtnText');
+        text.innerText = 'Đã sao chép vào bộ nhớ tạm!';
+        setTimeout(() => text.innerText = 'Sao chép Payment URL', 2000);
+      });
+    }
+
+    function copyText(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert(`Đã sao chép: ${text}`);
+      });
+    }
+
+    // Giả lập webhook IPN
+    async function simulateIPN(responseCode) {
+      const backendUrl = getBackendUrl();
+      const orderCode = document.getElementById('orderCodeInput').value.trim();
+      const ipnResult = document.getElementById('ipnResult');
+
+      if (!orderCode) {
+        alert('Vui lòng nhập mã đơn hàng!');
+        return;
+      }
+
+      ipnResult.classList.remove('hidden');
+      ipnResult.innerText = 'Đang gửi IPN webhook tới backend...';
+
+      const txnNo = 'SIM_' + Date.now();
+      const ipnUrl = `${backendUrl}/api/payment/vnpay-ipn?vnp_TxnRef=${encodeURIComponent(orderCode)}&vnp_ResponseCode=${responseCode}&vnp_TransactionNo=${txnNo}&vnp_BankCode=NCB`;
+
+      try {
+        const res = await fetch(ipnUrl, { method: 'GET' });
+        const data = await res.json();
+        ipnResult.innerText = `Phản hồi IPN: ${JSON.stringify(data, null, 2)}`;
+      } catch (err) {
+        ipnResult.innerText = `Lỗi IPN: ${err.message}`;
+      }
+    }
+  </script>
+</body>
+</html>

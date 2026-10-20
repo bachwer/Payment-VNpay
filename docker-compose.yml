@@ -1,0 +1,100 @@
+services:
+  # ---------------------------------------------------------------------------
+  # Spring Boot VNPay Payment Service (Host Port 8080)
+  # ---------------------------------------------------------------------------
+  payment-vnpay-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: payment-vnpay-app
+    restart: unless-stopped
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      SERVER_PORT: 8080
+      DB_HOST: payment-vnpay-mysql
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE:-payment_vnpay_db}
+      DB_USERNAME: ${MYSQL_USER:-vnpay_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-vnpay_password}
+      SPRING_DATASOURCE_URL: jdbc:mysql://payment-vnpay-mysql:3306/${MYSQL_DATABASE:-payment_vnpay_db}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh&createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-vnpay_user}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-vnpay_password}
+      JPA_DDL_AUTO: ${JPA_DDL_AUTO:-update}
+      JPA_SHOW_SQL: ${JPA_SHOW_SQL:-true}
+      VNPAY_TMN_CODE: xxxxxx
+      VNPAY_HASH_SECRET: xxxxxxxxxxxxxxxxxxxxx
+      VNPAY_PAY_URL: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+      VNPAY_RETURN_URL: ${VNPAY_RETURN_URL:-http://localhost:8080/api/payment/vnpay-return}
+      VNPAY_IPN_URL: ${VNPAY_IPN_URL:-http://localhost:8080/api/payment/vnpay-ipn}
+      TZ: Asia/Ho_Chi_Minh
+    depends_on:
+      payment-vnpay-mysql:
+        condition: service_healthy
+    networks:
+      - vnpay-network
+
+  # ---------------------------------------------------------------------------
+  # MySQL Database Infrastructure
+  # ---------------------------------------------------------------------------
+  payment-vnpay-mysql:
+    image: mysql:8.0
+    container_name: payment-vnpay-mysql
+    restart: unless-stopped
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-payment_vnpay_db}
+      MYSQL_USER: ${MYSQL_USER:-vnpay_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-vnpay_password}
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "${MYSQL_LOCAL_PORT:-3308}:3306"
+    volumes:
+      - vnpay_mysql_data:/var/lib/mysql
+      - ./init-db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD:-root} || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - vnpay-network
+
+  # ---------------------------------------------------------------------------
+  # Database Management Web UI (phpMyAdmin)
+  # ---------------------------------------------------------------------------
+  payment-vnpay-phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: payment-vnpay-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "${PMA_PORT:-8085}:80"
+    environment:
+      PMA_HOST: payment-vnpay-mysql
+      PMA_PORT: 3306
+      PMA_USER: ${MYSQL_USER:-vnpay_user}
+      PMA_PASSWORD: ${MYSQL_PASSWORD:-vnpay_password}
+      UPLOAD_LIMIT: 64M
+    depends_on:
+      payment-vnpay-mysql:
+        condition: service_healthy
+    networks:
+      - vnpay-network
+
+# ---------------------------------------------------------------------------
+# Storage & Networking Configuration
+# ---------------------------------------------------------------------------
+volumes:
+  vnpay_mysql_data:
+    name: vnpay_mysql_data
+    driver: local
+
+networks:
+  vnpay-network:
+    name: vnpay-network
+    driver: bridge
