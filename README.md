@@ -1,3 +1,11 @@
+-Truy cập trực tiếp trang đăng ký test tại: https://sandbox.vnpayment.vn/devreg/
+
+-Mở Email vừa dùng để đăng ký, tìm thư kích hoạt từ VNPay và nhấn vào đường link xác thực tài khoản.
+
+
+
+
+
 # Payment VNPay Service (Docker & Docker Compose)
 
 Hệ thống tích hợp cổng thanh toán **VNPay** xây dựng trên nền tảng **Spring Boot 4 / Java 21** kết hợp **MySQL 8.0** và **phpMyAdmin**, được đóng gói hoàn chỉnh bằng **Docker & Docker Compose**.
